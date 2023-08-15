@@ -257,8 +257,8 @@ class Application(Frame):
             data, found = self.serial_parser.read_serial()
             
             if found:
-                print("UPDATE")
-                print(data)
+                # print("UPDATE")
+                # print(data)
                 pass
                 self.data_frame = pd.concat([self.data_frame, data], ignore_index=True).dropna()
                 tempo = self.data_frame["Tempo"].values
@@ -301,6 +301,9 @@ class Application(Frame):
         self.reader_stop_button['state'] = DISABLED
         self.__reading = False
 
-        self.data
+        self.data_frame.to_csv(f"{self.reader_save_path_entry.get()}\entry.csv")
+        self.data_frame = pd.json_normalize(self.data_json)
+
+
 
         
