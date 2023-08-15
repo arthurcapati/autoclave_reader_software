@@ -183,12 +183,28 @@ class Application(Frame):
         self.vizualization_main_widget_msg.pack()
 
         plt.ion()
+
+        color='blue'
         self.figure = plt.Figure(figsize=(6, 5), dpi=150)
         self.ax = self.figure.add_subplot(111)
-        self.lines, = self.ax.plot(0,0)
+        self.line_pression, = self.ax.plot(0,0, color=color)
+        self.ax.set_ylabel('Pressão', color=color)  # we already handled the x-label with ax1
+        self.ax.tick_params(axis='y', color=color)
         self.ax.autoscale(True)
         self.ax.set_xlim(0,10)
-        self.ax.set_ylim(0,100)
+        self.ax.set_ylim(0,10)
+
+        color='red'
+        self.ax2 = self.ax.twinx() 
+        self.ax2.set_ylabel('Temperatura', color=color)  # we already handled the x-label with ax1
+        self.line_temperature, = self.ax2.plot(0,0, color=color)
+        # self.ax.set_xlim(0,10)
+        self.ax2.autoscale(True)
+        self.ax2.set_ylim(10, 30)
+        self.ax2.tick_params(axis='y', color=color)
+
+        self.figure.tight_layout() 
+
         self.figure_canvas = FigureCanvasTkAgg(self.figure, self.vizualization_main_widget)
         self.figure_canvas.get_tk_widget().pack(side=LEFT, fill=BOTH)
 
@@ -233,23 +249,45 @@ class Application(Frame):
         self.data = []
         self.data_frame = self.data_frame.drop(self.data_frame.index)
 
+        self.serial_parser.parse_serial()
         while self.serial_parser.is_connected() and self.reading:
+            time.sleep(0.2)
             self.update()
-            data = self.serial_parser.random()
-            self.data_frame = pd.concat([self.data_frame, pd.json_normalize(data)], ignore_index=True).dropna()
-            xdata = self.data_frame.iloc[:,0].values
-            ydata = self.data_frame.iloc[:,1].values
-            self.lines.set(ydata=ydata, xdata=xdata)
-            self.auto_scale(max(xdata), max(ydata))
-            self.figure_canvas.draw()
-            self.figure_canvas.flush_events()
-            # self.data.append(self.serial_parser.read_serial())
+            
+            data, found = self.serial_parser.read_serial()
+            
+            if found:
+                print("UPDATE")
+                print(data)
+                pass
+                self.data_frame = pd.concat([self.data_frame, data], ignore_index=True).dropna()
+                tempo = self.data_frame["Tempo"].values
+                pression = self.data_frame["Pressao"].values
+                temperature = self.data_frame["Temperatura"].values
+                self.line_pression.set(ydata=pression, xdata=tempo)
+                self.auto_scale(self.ax, max(tempo), max(pression)*1.2)
+                self.line_temperature.set(ydata=temperature, xdata=tempo)
+                self.auto_scale(self.ax2, max(tempo), max(temperature)*1.2)
+                self.figure_canvas.draw()
+                self.figure_canvas.flush_events()
 
-    def auto_scale(self, x_lim,y_lim):
+                self.data.append(self.serial_parser.read_serial())
+
+
+                # xdata = self.data_frame.iloc[:,0].values
+                # ydata = self.data_frame.iloc[:,1].values
+                # self.lines.set(ydata=ydata, xdata=xdata)
+                # self.auto_scale(max(xdata), max(ydata))
+                # self.figure_canvas.draw()
+                # self.figure_canvas.flush_events()
+
+                # self.data.append(self.serial_parser.read_serial())
+
+    def auto_scale(self,ax, x_lim,y_lim):
         # if self.ax.get_xlim()[1]<x_lim:
-        self.ax.set_xlim(0,x_lim)
+        ax.set_xlim(0,x_lim)
         # if self.ax.get_xlim()[1]<y_lim:
-        self.ax.set_ylim(0,y_lim)
+        ax.set_ylim(0,y_lim)
         pass
 
 
