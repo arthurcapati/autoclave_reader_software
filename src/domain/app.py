@@ -192,7 +192,7 @@ class Application(Frame):
         self.ax.tick_params(axis='y', color=color)
         self.ax.autoscale(True)
         self.ax.set_xlim(0,10)
-        self.ax.set_ylim(0,10)
+        self.ax.set_ylim(-1,10)
 
         color='red'
         self.ax2 = self.ax.twinx() 
@@ -200,7 +200,7 @@ class Application(Frame):
         self.line_temperature, = self.ax2.plot(0,0, color=color)
         # self.ax.set_xlim(0,10)
         self.ax2.autoscale(True)
-        self.ax2.set_ylim(10, 30)
+        self.ax2.set_ylim(-1, 30)
         self.ax2.tick_params(axis='y', color=color)
 
         self.figure.tight_layout() 
@@ -265,9 +265,13 @@ class Application(Frame):
                 pression = self.data_frame["Pressao"].values
                 temperature = self.data_frame["Temperatura"].values
                 self.line_pression.set(ydata=pression, xdata=tempo)
-                self.auto_scale(self.ax, max(tempo), max(pression)*1.2)
+                self.ax.set_xlim(0, max(tempo)+2)
+                self.ax.set_ylim(-1,  max(pression)+5)
+                # self.auto_scale(self.ax, max(tempo), max(pression)+5)
                 self.line_temperature.set(ydata=temperature, xdata=tempo)
-                self.auto_scale(self.ax2, max(tempo), max(temperature)*1.2)
+                self.ax2.set_xlim(0,max(tempo)+2)
+                self.ax2.set_ylim(-1, max(temperature)+10)
+                # self.auto_scale(self.ax2, max(tempo), max(temperature)+10)
                 self.figure_canvas.draw()
                 self.figure_canvas.flush_events()
 
