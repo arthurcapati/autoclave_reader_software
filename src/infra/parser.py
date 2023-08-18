@@ -61,6 +61,8 @@ class SerialParser:
             self.__last_found = "}".join(jsons[1:])
             # print (f'{data}')
             data = pd.DataFrame.from_dict([data])
+            data.replace(to_replace=[None], value=0, inplace=True)
+            print(data)
             found = True
         # print (f' Data = {data}')
 

@@ -1,4 +1,4 @@
-from tkinter import Tk, Frame, Button, Label, LEFT, RIGHT, TOP, BOTH, Entry, StringVar, DISABLED, NORMAL
+from tkinter import Tk, Frame, Button, Label, LEFT, RIGHT, TOP, BOTH, Entry, StringVar, DISABLED, NORMAL, filedialog
 from tkinter.ttk import Combobox
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -8,13 +8,7 @@ from serial.serialutil import SerialException
 import time
 import numpy as np
 import pandas as pd
-# from tkinter import ttk
-# root = Tk()
-# frm = ttk.Frame(root, padding=10)
-# frm.grid()
-# ttk.Label(frm, text="Hello World!").grid(column=0, row=0)
-# ttk.Button(frm, text="Quit", command=root.destroy).grid(column=1, row=0)
-# root.mainloop()
+import re
 
 
 class Application(Frame):
@@ -67,7 +61,6 @@ class Application(Frame):
     
     def __create_top(self, master=None):
         self.top_widget = Frame(master)
-        # self.top_widget.grid(column=0, row=0)
         self.top_widget.pack()
         self.top_widget["padx"] = 20
         self.top_widget_msg = Label(self.top_widget, text="AUTOCLAVE READER")
@@ -77,12 +70,8 @@ class Application(Frame):
 
     def __create_connections(self, master=None):
         self.connections_main_widget = Frame(master)
-        # self.connections_main_widget.grid(column=0, row=1)
         self.connections_main_widget.pack(side=LEFT)
         self.connections_main_widget["padx"] = 20
-        # self.connections_main_widget_msg = Label(self.connections_main_widget, text="AQUI ESTARA A CONEXÃO POR USB E POR BLUETOOH")
-        # self.connections_main_widget_msg["font"] = ("Verdana", "14", "italic", "bold")
-        # self.connections_main_widget_msg.pack()
 
         self.com_port_main_widget = Frame(self.connections_main_widget)
         self.com_port_main_widget.pack(side=TOP)
@@ -91,11 +80,11 @@ class Application(Frame):
         self.com_port_label["font"] = self.object_font
         self.com_port_label.pack(side=LEFT)
         
-        self.com_port_combobox = Combobox(self.com_port_main_widget, width=15, textvariable=StringVar())
+        self.com_port_combobox = Combobox(self.com_port_main_widget, width=15, textvariable=StringVar(), postcommand=self.update_comports)
         self.com_port_combobox['font'] = self.common_font
-        self.com_port_combobox['values'] = Environment.comports
-        self.com_port_combobox.current(0)
+        self.update_comports()
         self.com_port_combobox.pack()
+
 
         self.baud_port_main_widget = Frame(self.connections_main_widget)
         self.baud_port_main_widget.pack(side=TOP)
@@ -125,41 +114,57 @@ class Application(Frame):
 
     def __create_reader(self, master=None):
         self.reader_main_widget = Frame(master)
-        # self.reader_main_widget.grid(column=0, row=2)
         self.reader_main_widget.pack(side=LEFT)
         self.reader_main_widget["padx"] = 10
-        # self.reader_main_widget_msg = Label(self.reader_main_widget, text="LEITURA")
-        # self.reader_main_widget_msg["font"] = ("Verdana", "14", "italic", "bold")
-        # self.reader_main_widget_msg.pack()
+
         
         self.reader_entries_widget = Frame(self.reader_main_widget)
         self.reader_entries_widget.pack()
 
-        self.reader_entry_path_widget = Frame(self.reader_entries_widget)
-        self.reader_entry_path_widget['pady'] = 10
-        self.reader_entry_path_widget.pack()
+        self.reader_entry_save_path_widget = Frame(self.reader_entries_widget)
+        self.reader_entry_save_path_widget['pady'] = 10
+        self.reader_entry_save_path_widget.pack()
+
+        self.reader_entry_save_name_widget = Frame(self.reader_entries_widget)
+        self.reader_entry_save_name_widget['pady'] = 10
+        self.reader_entry_save_name_widget.pack()
 
         self.reader_buttons_widget = Frame(self.reader_entries_widget)
         self.reader_buttons_widget['pady'] = 10
         self.reader_buttons_widget.pack()
 
-        self.reader_save_path_label = Label(self.reader_entry_path_widget, text="Save To:")
-        self.reader_save_path_label["font"] = self.object_font
-        self.reader_save_path_label.pack(side=LEFT)
+        # self.reader_save_path_label = Label(self.reader_entry_save_path_widget, text="Save To:")
+        # self.reader_save_path_label["font"] = self.object_font
+        # self.reader_save_path_label.pack(side=LEFT)
 
-        self.reader_save_path_entry = Entry(self.reader_entry_path_widget)
-        self.reader_save_path_entry["width"] = 50
-        self.reader_save_path_entry['font'] = self.common_font
-        content = StringVar()
-        content.set(Environment.actual_path)
-        self.reader_save_path_entry['textvariable'] = content
-        self.reader_save_path_entry.pack(side=LEFT)
+        # self.reader_save_path_entry = Entry(self.reader_entry_save_path_widget)
+        # self.reader_save_path_entry["width"] = 50
+        # self.reader_save_path_entry['font'] = self.common_font
+        # content = StringVar()
+        # content.set(Environment.actual_path)
+        # self.reader_save_path_entry['textvariable'] = content
+        # self.reader_save_path_entry.pack(side=LEFT)
+
+        # self.reader_save_path_label = Label(self.reader_entry_save_name_widget, text="Save Name:")
+        # self.reader_save_path_label["font"] = self.object_font
+        # self.reader_save_path_label.pack(side=LEFT)
+
+        # self.reader_save_path_entry = Entry(self.reader_entry_save_name_widget)
+        # self.reader_save_path_entry["width"] = 50
+        # self.reader_save_path_entry['font'] = self.common_font
+        # content = StringVar()
+        # content.set("entry.csv")
+        # self.reader_save_path_entry['textvariable'] = content
+        # self.reader_save_path_entry.pack(side=LEFT)
+
+        
 
         self.reader_start_button = Button(self.reader_buttons_widget)
         self.reader_start_button["text"] = "Start"
         self.reader_start_button["font"] = self.object_font
         self.reader_start_button["width"] = 12
         self.reader_start_button["command"] = self.start_reading
+        self.reader_start_button['state'] = DISABLED
         self.reader_start_button.pack(side=LEFT)
 
         self.reader_stop_button = Button(self.reader_buttons_widget)
@@ -170,6 +175,14 @@ class Application(Frame):
         self.reader_stop_button['state'] = DISABLED
         self.reader_stop_button.pack(side=LEFT)
 
+        self.reader_save_button = Button(self.reader_buttons_widget)
+        self.reader_save_button["text"] = "Save"
+        self.reader_save_button["font"] = self.object_font
+        self.reader_save_button["width"] = 12
+        self.reader_save_button["command"] = self.save_data
+        self.reader_save_button['state'] = DISABLED
+        self.reader_save_button.pack(side=LEFT)
+
         
 
 
@@ -178,9 +191,9 @@ class Application(Frame):
         # self.vizualization_main_widget.grid(column=0, row=3)
         self.vizualization_main_widget.pack(side=TOP)
         self.vizualization_main_widget["padx"] = 20
-        self.vizualization_main_widget_msg = Label(self.vizualization_main_widget, text="AQUI ESTARA O GRAFICO DA LEITURA")
-        self.vizualization_main_widget_msg["font"] = self.common_font
-        self.vizualization_main_widget_msg.pack()
+        # self.vizualization_main_widget_msg = Label(self.vizualization_main_widget, text="AQUI ESTARA O GRAFICO DA LEITURA")
+        # self.vizualization_main_widget_msg["font"] = self.common_font
+        # self.vizualization_main_widget_msg.pack()
 
         plt.ion()
 
@@ -190,6 +203,10 @@ class Application(Frame):
         self.line_pression, = self.ax.plot(0,0, color=color)
         self.ax.set_ylabel('Pressão', color=color)  # we already handled the x-label with ax1
         self.ax.tick_params(axis='y', color=color)
+        self.ax.yaxis.label.set_color(color)
+        self.ax.spines['left'].set_color(color)
+        self.ax.spines['left'].set_linewidth(1)
+        self.ax.tick_params(axis = "y",colors=color, which="both")
         self.ax.autoscale(True)
         self.ax.set_xlim(0,10)
         self.ax.set_ylim(-1,10)
@@ -198,8 +215,10 @@ class Application(Frame):
         self.ax2 = self.ax.twinx() 
         self.ax2.set_ylabel('Temperatura', color=color)  # we already handled the x-label with ax1
         self.line_temperature, = self.ax2.plot(0,0, color=color)
-        # self.ax.set_xlim(0,10)
         self.ax2.autoscale(True)
+        self.ax2.yaxis.label.set_color(color)
+        self.ax2.spines['right'].set_color(color)
+        self.ax2.tick_params(colors=color, which='both')
         self.ax2.set_ylim(-1, 30)
         self.ax2.tick_params(axis='y', color=color)
 
@@ -210,6 +229,13 @@ class Application(Frame):
 
         self.ax.set_title('Data')
 
+    def update_comports(self):
+        comports = Environment.comports
+        self.com_port_combobox['values'] = comports
+        if len(comports)>1:
+            self.com_port_combobox.current(0)
+        self.com_port_combobox.pack()
+        pass
 
     def connect_to_comport(self):
         try:
@@ -220,6 +246,8 @@ class Application(Frame):
             self.connection_button["text"] = "Disconnect"
             self.connection_button["bg"] = "#078f22"
             self.connection_button["command"] = self.disconnect_to_comport
+
+            self.reader_start_button['state'] = NORMAL
 
         except SerialException as error:
             self.connection_error_label['text'] = error.args[0]
@@ -239,15 +267,17 @@ class Application(Frame):
         self.connection_button["command"] = self.connect_to_comport
         self.connection_button["bg"] = "SystemButtonFace"
 
+        self.reader_start_button['state'] = DISABLED
+
         pass
 
     def start_reading(self):
         self.reader_start_button['state'] = DISABLED
         self.reader_stop_button['state'] = NORMAL
+        self.reader_save_button['state'] = DISABLED
         self.__reading = True
 
-        self.data = []
-        self.data_frame = self.data_frame.drop(self.data_frame.index)
+        self.__clear_data()
 
         self.serial_parser.parse_serial()
         while self.serial_parser.is_connected() and self.reading:
@@ -257,53 +287,46 @@ class Application(Frame):
             data, found = self.serial_parser.read_serial()
             
             if found:
-                # print("UPDATE")
-                # print(data)
-                pass
                 self.data_frame = pd.concat([self.data_frame, data], ignore_index=True).dropna()
-                tempo = self.data_frame["Tempo"].values
-                pression = self.data_frame["Pressao"].values
-                temperature = self.data_frame["Temperatura"].values
-                self.line_pression.set(ydata=pression, xdata=tempo)
-                self.ax.set_xlim(0, max(tempo)+2)
-                self.ax.set_ylim(-1,  max(pression)+5)
-                # self.auto_scale(self.ax, max(tempo), max(pression)+5)
-                self.line_temperature.set(ydata=temperature, xdata=tempo)
-                self.ax2.set_xlim(0,max(tempo)+2)
-                self.ax2.set_ylim(-1, max(temperature)+10)
-                # self.auto_scale(self.ax2, max(tempo), max(temperature)+10)
-                self.figure_canvas.draw()
-                self.figure_canvas.flush_events()
+                self.__update_graph()
 
-                self.data.append(self.serial_parser.read_serial())
+    def __clear_data(self):
+        self.data = []
+        self.data_frame = self.data_frame.drop(self.data_frame.index)
+
+    def __update_graph(self):
+        tempo = self.data_frame["Tempo"].values
+        pression = self.data_frame["Pressao"].values
+        temperature = self.data_frame["Temperatura"].values
+
+        self.line_pression.set(ydata=pression, xdata=tempo)
+        self.__update_ax_limits(self.ax, tempo, pression)
+
+        self.line_temperature.set(ydata=temperature, xdata=tempo)
+        self.__update_ax_limits(self.ax2, tempo, temperature)
+
+        self.figure_canvas.draw()
+        self.figure_canvas.flush_events()
 
 
-                # xdata = self.data_frame.iloc[:,0].values
-                # ydata = self.data_frame.iloc[:,1].values
-                # self.lines.set(ydata=ydata, xdata=xdata)
-                # self.auto_scale(max(xdata), max(ydata))
-                # self.figure_canvas.draw()
-                # self.figure_canvas.flush_events()
-
-                # self.data.append(self.serial_parser.read_serial())
-
-    def auto_scale(self,ax, x_lim,y_lim):
-        # if self.ax.get_xlim()[1]<x_lim:
-        ax.set_xlim(0,x_lim)
-        # if self.ax.get_xlim()[1]<y_lim:
-        ax.set_ylim(0,y_lim)
-        pass
-
+    def __update_ax_limits(self, ax, xdata, ydata):
+        ax.set_xlim(0,max(xdata)+5)
+        ax.set_ylim(-1, max(ydata)+5)
 
 
     def stop_reading(self):
         self.reader_start_button['state'] = NORMAL
         self.reader_stop_button['state'] = DISABLED
+        self.reader_save_button['state'] = NORMAL
         self.__reading = False
+ 
 
-        self.data_frame.to_csv(f"{self.reader_save_path_entry.get()}\entry.csv")
-        self.data_frame = pd.json_normalize(self.data_json)
+    def save_data(self):
+        data = [('All tyes(*.*)', '*.*'),("csv file(*.csv)","*.csv")]
+        filename = filedialog.asksaveasfile(initialfile="entry.csv", initialdir=Environment.actual_path, filetypes = data, defaultextension = data)
 
+        if filename:
+            self.data_frame.to_csv(filename.name)
 
 
         
