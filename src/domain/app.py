@@ -201,7 +201,7 @@ class Application(Frame):
         self.figure = plt.Figure(figsize=(6, 5), dpi=150)
         self.ax = self.figure.add_subplot(111)
         self.line_pression, = self.ax.plot(0,0, color=color)
-        self.ax.set_ylabel('Pressão', color=color)  # we already handled the x-label with ax1
+        self.ax.set_ylabel('Pressão (bar)', color=color)  # we already handled the x-label with ax1
         self.ax.tick_params(axis='y', color=color)
         self.ax.yaxis.label.set_color(color)
         self.ax.spines['left'].set_color(color)
@@ -213,7 +213,7 @@ class Application(Frame):
 
         color='red'
         self.ax2 = self.ax.twinx() 
-        self.ax2.set_ylabel('Temperatura', color=color)  # we already handled the x-label with ax1
+        self.ax2.set_ylabel('Temperatura (°C)', color=color)  # we already handled the x-label with ax1
         self.line_temperature, = self.ax2.plot(0,0, color=color)
         self.ax2.autoscale(True)
         self.ax2.yaxis.label.set_color(color)
@@ -310,9 +310,27 @@ class Application(Frame):
 
 
     def __update_ax_limits(self, ax, xdata, ydata):
-        ax.set_xlim(0,max(xdata)+5)
-        ax.set_ylim(-1, max(ydata)+5)
+        max_x_value = self.__find_upper_limit(max(xdata))
+        max_y_value = self.__find_upper_limit(max(xdata))
+        ax.set_xlim(min(xdata), max_x_value)
+        ax.set_ylim(0, max_y_value)
 
+    def __find_upper_limit(self, max_value) -> int:
+        if max_value<10:
+            blocks = (max_value//1) + 1
+            return blocks
+        elif max_value<50:
+            blocks = (max_value//5) + 1
+            return blocks*5
+        elif max_value<100:
+            blocks = (max_value//10) + 1
+            return blocks*10
+        elif max_value<1000:
+            blocks = (max_value//100) + 1
+            return blocks*100
+        else:
+            blocks = (max_value//1000) + 1
+            return blocks*1000
 
     def stop_reading(self):
         self.reader_start_button['state'] = NORMAL
